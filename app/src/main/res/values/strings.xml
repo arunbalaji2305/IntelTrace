@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">IntelTrace</string>
+    
+    <!-- Dashboard -->
+    <string name="dashboard_title">IntelTrace</string>
+    <string name="vpn_active">VPN Active - Monitoring network traffic</string>
+    <string name="vpn_inactive">VPN Inactive</string>
+    <string name="enable_vpn">Enable VPN Protection</string>
+    <string name="disable_vpn">Disable VPN</string>
+    
+    <!-- Statistics -->
+    <string name="total_connections">Total Connections</string>
+    <string name="suspicious_connections">Suspicious</string>
+    <string name="alerts">Alerts</string>
+    <string name="malicious_ips">Malicious IPs</string>
+    
+    <!-- Connections -->
+    <string name="connections_title">Network Connections</string>
+    <string name="no_connections">No connections detected</string>
+    <string name="filter_all">All Connections</string>
+    <string name="filter_suspicious">Suspicious Only</string>
+    
+    <!-- Threats -->
+    <string name="threats_title">Threat Analysis</string>
+    <string name="threat_level_critical">Critical</string>
+    <string name="threat_level_high">High Risk</string>
+    <string name="threat_level_medium">Medium Risk</string>
+    <string name="threat_level_low">Low Risk</string>
+    <string name="threat_level_safe">Safe</string>
+    
+    <!-- Alerts -->
+    <string name="alerts_title">Security Alerts</string>
+    <string name="no_alerts">No alerts</string>
+    <string name="alert_critical">🚨 Critical Threat Detected</string>
+    <string name="alert_high">⚠️ High Risk Connection</string>
+    <string name="alert_medium">⚡ Suspicious Activity</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="real_time_monitoring">Real-time Monitoring</string>
+    <string name="auto_block">Auto-block Threats</string>
+    <string name="notifications">Enable Notifications</string>
+    <string name="critical_alerts_only">Critical Alerts Only</string>
+    <string name="threat_threshold">Threat Threshold</string>
+    <string name="data_retention">Data Retention (Days)</string>
+    <string name="api_keys">API Keys</string>
+    <string name="abuseipdb_key">AbuseIPDB API Key</string>
+    <string name="virustotal_key">VirusTotal API Key</string>
+    
+    <!-- Actions -->
+    <string name="refresh">Refresh</string>
+    <string name="filter">Filter</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Messages -->
+    <string name="vpn_permission_required">VPN permission required to monitor network traffic</string>
+    <string name="monitoring_active">Network monitoring active</string>
+    <string name="threat_detected">Threat detected: %s</string>
+    <string name="connection_blocked">Connection blocked</string>
+</resources>
