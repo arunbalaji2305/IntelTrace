@@ -9,13 +9,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -23,8 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.inteltrace_v3.core.vpn.IntelTraceVpnService
+import com.example.inteltrace_v3.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
@@ -49,28 +49,47 @@ fun DashboardScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("IntelTrace") },
-                actions = {
-                    IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Default.Refresh, "Refresh")
-                    }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, "Settings")
-                    }
-                }
+    // Apple Design Layout: Full screen background with content
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SystemBackground)
+    ) {
+        // Glassy Header
+        GlassyHeader {
+            Text(
+                text = "IntelTrace",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                color = LabelPrimary
             )
+            Row {
+                IconButton(onClick = { viewModel.refresh() }) {
+                    Icon(Icons.Default.Refresh, "Refresh", tint = SystemBlue)
+                }
+                IconButton(onClick = onNavigateToSettings) {
+                    Icon(Icons.Default.Settings, "Settings", tint = SystemBlue)
+                }
+            }
         }
-    ) { paddingValues ->
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = AppleSpacing.medium), // 16dp
+            contentPadding = PaddingValues(top = AppleSpacing.large, bottom = AppleSpacing.xlarge),
+            verticalArrangement = Arrangement.spacedBy(AppleSpacing.large)
         ) {
+            // Large Title imitation if not in header
+            /* 
+            item {
+                Text(
+                    text = "Dashboard",
+                    style = MaterialTheme.typography.displayLarge,
+                    modifier = Modifier.padding(bottom = AppleSpacing.small)
+                )
+            }
+            */
+
             // VPN Status Card
             item {
                 VpnStatusCard(
@@ -100,33 +119,29 @@ fun DashboardScreen(
             
             // Stats Grid
             item {
-                Text(
-                    text = "Network Statistics",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                SectionHeader("Network Statistics")
             }
             
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppleSpacing.medium)
                 ) {
-                    StatCard(
+                    AppleStatCard(
                         modifier = Modifier.weight(1f),
                         title = "Connections",
                         value = uiState.totalConnections.toString(),
                         icon = Icons.Default.Star,
-                        color = MaterialTheme.colorScheme.primary,
+                        iconColor = SystemBlue,
                         onClick = onNavigateToConnections
                     )
                     
-                    StatCard(
+                    AppleStatCard(
                         modifier = Modifier.weight(1f),
                         title = "Suspicious",
                         value = uiState.suspiciousConnections.toString(),
                         icon = Icons.Default.Warning,
-                        color = Color(0xFFFF9800),
+                        iconColor = SystemOrange,
                         onClick = onNavigateToThreats
                     )
                 }
@@ -135,39 +150,34 @@ fun DashboardScreen(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AppleSpacing.medium)
                 ) {
-                    StatCard(
+                    AppleStatCard(
                         modifier = Modifier.weight(1f),
                         title = "Alerts",
                         value = uiState.unreadAlerts.toString(),
                         icon = Icons.Default.Notifications,
-                        color = Color(0xFFF44336),
+                        iconColor = SystemRed,
                         onClick = onNavigateToAlerts
                     )
                     
-                    StatCard(
+                    AppleStatCard(
                         modifier = Modifier.weight(1f),
                         title = "Malicious IPs",
                         value = uiState.maliciousIpsDetected.toString(),
                         icon = Icons.Default.Close,
-                        color = Color(0xFF9C27B0)
+                        iconColor = SystemPurple
                     )
                 }
             }
             
             // Quick Actions
             item {
-                Text(
-                    text = "Quick Actions",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                SectionHeader("Quick Actions")
             }
             
             item {
-                QuickActionButton(
+                AppleQuickActionButton(
                     text = "View All Connections",
                     icon = Icons.AutoMirrored.Filled.List,
                     onClick = onNavigateToConnections
@@ -175,7 +185,7 @@ fun DashboardScreen(
             }
             
             item {
-                QuickActionButton(
+                AppleQuickActionButton(
                     text = "Threat Analysis",
                     icon = Icons.Default.Search,
                     onClick = onNavigateToThreats
@@ -190,100 +200,117 @@ fun VpnStatusCard(
     isActive: Boolean,
     onToggle: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) 
-                Color(0xFF4CAF50).copy(alpha = 0.1f) 
-            else 
-                MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
+    AppleCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Text(
-                        text = "VPN Protection",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isActive) "Active - Monitoring traffic" else "Inactive",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isActive) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                Switch(
-                    checked = isActive,
-                    onCheckedChange = { onToggle() }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "VPN Protection",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = LabelPrimary
+                )
+                Spacer(modifier = Modifier.height(AppleSpacing.xsmall))
+                Text(
+                    text = if (isActive) "Active - Monitoring traffic" else "Inactive",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isActive) SystemGreen else LabelSecondary
                 )
             }
+            
+            Switch(
+                checked = isActive,
+                onCheckedChange = { onToggle() },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = SystemGreen,
+                    uncheckedThumbColor = Color.White,
+                    uncheckedTrackColor = SystemGray4
+                )
+            )
         }
     }
 }
 
 @Composable
-fun StatCard(
+fun AppleStatCard(
     modifier: Modifier = Modifier,
     title: String,
     value: String,
     icon: ImageVector,
-    color: Color,
+    iconColor: Color,
     onClick: (() -> Unit)? = null
 ) {
-    Card(
+    AppleCard(
         modifier = modifier,
-        onClick = { onClick?.invoke() },
-        enabled = onClick != null
+        onClick = onClick
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start 
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = color,
-                modifier = Modifier.size(32.dp)
+                tint = iconColor,
+                modifier = Modifier.size(28.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AppleSpacing.medium))
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.displaySmall, // Large geometric number
+                color = LabelPrimary
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.labelMedium,
+                color = LabelSecondary
             )
         }
     }
 }
 
 @Composable
-fun QuickActionButton(
+fun AppleQuickActionButton(
     text: String,
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Button(
+    AppleCard(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = AppleSpacing.medium
     ) {
-        Icon(icon, contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text)
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(SystemBlue.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = SystemBlue,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(AppleSpacing.medium))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = LabelPrimary
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = SystemGray3
+            )
+        }
     }
 }
+

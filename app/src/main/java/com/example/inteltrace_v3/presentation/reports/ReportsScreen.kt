@@ -15,17 +15,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.inteltrace_v3.ui.theme.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
     viewModel: ReportsViewModel = hiltViewModel()
@@ -34,31 +33,30 @@ fun ReportsScreen(
     val scope = rememberCoroutineScope()
     val stats by viewModel.statistics.collectAsState()
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Reports & Analytics") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SystemBackground)
+    ) {
+        // Apple-style Header
+        GlassyHeader {
+            Text(
+                text = "Reports & Analytics",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                color = LabelPrimary
             )
         }
-    ) { paddingValues ->
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = AppleSpacing.medium),
+            contentPadding = PaddingValues(top = AppleSpacing.large, bottom = AppleSpacing.xlarge),
+            verticalArrangement = Arrangement.spacedBy(AppleSpacing.large)
         ) {
             // Statistics Overview
             item {
-                Text(
-                    text = "Overview",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                SectionHeader("Overview")
             }
             
             item {
@@ -67,12 +65,7 @@ fun ReportsScreen(
             
             // Export Section
             item {
-                Text(
-                    text = "Export Data",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                SectionHeader("Export Data")
             }
             
             item {
@@ -82,8 +75,8 @@ fun ReportsScreen(
                     icon = Icons.Default.Share,
                     onExport = {
                         scope.launch {
-                            val result = viewModel.exportConnections(context)
-                            showToast(context, result)
+                            val (success, message) = viewModel.exportConnections(context)
+                            if (!success) showToast(context, message)
                         }
                     }
                 )
@@ -96,8 +89,8 @@ fun ReportsScreen(
                     icon = Icons.Default.Warning,
                     onExport = {
                         scope.launch {
-                            val result = viewModel.exportThreats(context)
-                            showToast(context, result)
+                            val (success, message) = viewModel.exportThreats(context)
+                            if (!success) showToast(context, message)
                         }
                     }
                 )
@@ -105,57 +98,115 @@ fun ReportsScreen(
             
             item {
                 ExportCard(
-                    title = "Full Report (PDF)",
+                    title = "Full Report",
                     description = "Generate comprehensive security report",
                     icon = Icons.Default.Info,
                     onExport = {
                         scope.launch {
-                            val result = viewModel.exportFullReport(context)
-                            showToast(context, result)
+                            val (success, message) = viewModel.exportFullReport(context)
+                            if (!success) showToast(context, message)
                         }
                     }
                 )
             }
             
-            // Quick Actions
+            // Quick Actions - Redesigned to match Apple theme
             item {
-                Text(
-                    text = "Quick Actions",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                SectionHeader("Quick Actions")
             }
             
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                AppleCard(
+                    onClick = {
+                        scope.launch {
+                            viewModel.clearOldData()
+                            showToast(context, "Old data cleared successfully")
+                        }
+                    }
                 ) {
-                    ActionButton(
-                        modifier = Modifier.weight(1f),
-                        text = "Clear Old Data",
-                        icon = Icons.Default.Delete,
-                        color = Color(0xFFFF5722),
-                        onClick = {
-                            scope.launch {
-                                viewModel.clearOldData()
-                                showToast(context, "Old data cleared successfully")
-                            }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(SystemRed.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = SystemRed,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
-                    )
-                    
-                    ActionButton(
-                        modifier = Modifier.weight(1f),
-                        text = "Share Report",
-                        icon = Icons.AutoMirrored.Filled.Send,
-                        color = MaterialTheme.colorScheme.primary,
-                        onClick = {
-                            scope.launch {
-                                shareReport(context, viewModel)
-                            }
+                        Spacer(modifier = Modifier.width(AppleSpacing.medium))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Clear Old Data",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = LabelPrimary
+                            )
+                            Text(
+                                text = "Remove data older than 30 days",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = LabelSecondary
+                            )
                         }
-                    )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = SystemGray3
+                        )
+                    }
+                }
+            }
+            
+            item {
+                AppleCard(
+                    onClick = {
+                        scope.launch {
+                            shareReport(context, viewModel)
+                        }
+                    }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(SystemBlue.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = null,
+                                tint = SystemBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(AppleSpacing.medium))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Share Report",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = LabelPrimary
+                            )
+                            Text(
+                                text = "Share summary via any app",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = LabelSecondary
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = SystemGray3
+                        )
+                    }
                 }
             }
         }
@@ -164,15 +215,9 @@ fun ReportsScreen(
 
 @Composable
 fun StatisticsCard(stats: ReportStatistics) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
+    AppleCard {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(AppleSpacing.medium)
         ) {
             StatRow("Total Connections", stats.totalConnections.toString())
             StatRow("Suspicious Activity", stats.suspiciousConnections.toString())
@@ -193,13 +238,13 @@ fun StatRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            color = LabelSecondary
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            fontWeight = FontWeight.SemiBold,
+            color = LabelPrimary
         )
     }
 }
@@ -211,76 +256,41 @@ fun ExportCard(
     icon: ImageVector,
     onExport: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onExport
-    ) {
+    AppleCard(onClick = onExport) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(AppleSpacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(SystemBlue.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = SystemBlue,
+                    modifier = Modifier.size(20.dp)
                 )
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = LabelPrimary
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = LabelSecondary
+                )
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-            )
-        }
-    }
-}
-
-@Composable
-fun ActionButton(
-    modifier: Modifier = Modifier,
-    text: String,
-    icon: ImageVector,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(80.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = color),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall
+                tint = SystemGray3
             )
         }
     }

@@ -1,6 +1,9 @@
 package com.example.inteltrace_v3.presentation.reports
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.inteltrace_v3.data.repository.ConnectionRepository
@@ -8,6 +11,7 @@ import com.example.inteltrace_v3.data.repository.AlertRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
@@ -45,7 +49,7 @@ class ReportsViewModel @Inject constructor(
         initialValue = ReportStatistics()
     )
     
-    suspend fun exportConnections(context: Context): String {
+    suspend fun exportConnections(context: Context): Pair<Boolean, String> {
         return try {
             val connections = connectionRepository.getAllConnections().first()
             val csv = buildString {
@@ -55,16 +59,16 @@ class ReportsViewModel @Inject constructor(
                 }
             }
             
-            // Save to Downloads folder
-            val fileName = "inteltrace_connections_${System.currentTimeMillis()}.csv"
-            saveToDownloads(context, fileName, csv)
-            "Connections exported to Downloads/$fileName"
+            val fileName = "IntelTrace_Connections_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
+            val file = createAndShareFile(context, fileName, csv)
+            shareFile(context, file, "IntelTrace Connection History", "text/csv")
+            Pair(true, "Opening share menu...")
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            Pair(false, "Export failed: ${e.message}")
         }
     }
     
-    suspend fun exportThreats(context: Context): String {
+    suspend fun exportThreats(context: Context): Pair<Boolean, String> {
         return try {
             val connections = connectionRepository.getSuspiciousConnections(30).first()
             val csv = buildString {
@@ -74,15 +78,16 @@ class ReportsViewModel @Inject constructor(
                 }
             }
             
-            val fileName = "inteltrace_threats_${System.currentTimeMillis()}.csv"
-            saveToDownloads(context, fileName, csv)
-            "Threats exported to Downloads/$fileName"
+            val fileName = "IntelTrace_Threats_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
+            val file = createAndShareFile(context, fileName, csv)
+            shareFile(context, file, "IntelTrace Threat Report", "text/csv")
+            Pair(true, "Opening share menu...")
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            Pair(false, "Export failed: ${e.message}")
         }
     }
     
-    suspend fun exportFullReport(context: Context): String {
+    suspend fun exportFullReport(context: Context): Pair<Boolean, String> {
         return try {
             val stats = statistics.value
             val connections = connectionRepository.getAllConnections().first()
@@ -127,11 +132,12 @@ class ReportsViewModel @Inject constructor(
                 appendLine("=".repeat(60))
             }
             
-            val fileName = "inteltrace_report_${System.currentTimeMillis()}.txt"
-            saveToDownloads(context, fileName, report)
-            "Report exported to Downloads/$fileName"
+            val fileName = "IntelTrace_FullReport_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.txt"
+            val file = createAndShareFile(context, fileName, report)
+            shareFile(context, file, "IntelTrace Full Security Report", "text/plain")
+            Pair(true, "Opening share menu...")
         } catch (e: Exception) {
-            "Export failed: ${e.message}"
+            Pair(false, "Export failed: ${e.message}")
         }
     }
     
@@ -171,10 +177,30 @@ class ReportsViewModel @Inject constructor(
         }
     }
     
-    private fun saveToDownloads(context: Context, fileName: String, content: String) {
-        // Note: For Android 10+, you'd use MediaStore
-        // For simplicity, this creates a file in the app's external files directory
-        val file = java.io.File(context.getExternalFilesDir(null), fileName)
+    private fun createAndShareFile(context: Context, fileName: String, content: String): File {
+        // Create file in cache directory for sharing
+        val file = File(context.cacheDir, fileName)
         file.writeText(content)
+        return file
+    }
+    
+    private fun shareFile(context: Context, file: File, title: String, mimeType: String) {
+        val uri: Uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_TEXT, "IntelTrace Security Report - $title")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        
+        val chooserIntent = Intent.createChooser(shareIntent, "Share via")
+        chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooserIntent)
     }
 }
