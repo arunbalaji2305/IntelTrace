@@ -48,6 +48,18 @@ class ConnectionRepository @Inject constructor(
     suspend fun getConnectionCountSince(timestamp: Long): Int {
         return connectionDao.getConnectionCountSince(timestamp)
     }
+    
+    suspend fun updateThreatScore(id: Long, score: Int) {
+        connectionDao.updateThreatScore(id, score)
+    }
+    
+    suspend fun updateBytes(id: Long, bytesSent: Long, bytesReceived: Long) {
+        connectionDao.updateBytes(id, bytesSent, bytesReceived)
+    }
+    
+    suspend fun deleteAll() {
+        connectionDao.deleteAll()
+    }
 }
 
 private fun ConnectionEntity.toDomainModel() = NetworkConnection(

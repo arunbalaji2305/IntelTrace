@@ -99,4 +99,58 @@ object AppModule {
             .build()
             .create(URLhausService::class.java)
     }
+    
+    @Provides
+    @Singleton
+    fun provideAlienVaultOTXService(okHttpClient: OkHttpClient): com.example.inteltrace_v3.data.remote.api.AlienVaultOTXService {
+        return Retrofit.Builder()
+            .baseUrl(com.example.inteltrace_v3.data.remote.api.AlienVaultOTXService.BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(com.example.inteltrace_v3.data.remote.api.AlienVaultOTXService::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideThreatFoxService(okHttpClient: OkHttpClient): com.example.inteltrace_v3.data.remote.api.ThreatFoxService {
+        return Retrofit.Builder()
+            .baseUrl(com.example.inteltrace_v3.data.remote.api.ThreatFoxService.BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(com.example.inteltrace_v3.data.remote.api.ThreatFoxService::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun providePhishTankService(okHttpClient: OkHttpClient): com.example.inteltrace_v3.data.remote.api.PhishTankService {
+        return Retrofit.Builder()
+            .baseUrl(com.example.inteltrace_v3.data.remote.api.PhishTankService.BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(com.example.inteltrace_v3.data.remote.api.PhishTankService::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideBloomFilter(): com.example.inteltrace_v3.core.utils.BloomFilter {
+        return com.example.inteltrace_v3.core.utils.BloomFilter(
+            expectedElements = 10000,
+            falsePositiveRate = 0.01
+        )
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFlowAnalyzer(): com.example.inteltrace_v3.core.analysis.FlowAnalyzer {
+        return com.example.inteltrace_v3.core.analysis.FlowAnalyzer()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideExportManager(@ApplicationContext context: Context): com.example.inteltrace_v3.core.export.ExportManager {
+        return com.example.inteltrace_v3.core.export.ExportManager(context)
+    }
 }

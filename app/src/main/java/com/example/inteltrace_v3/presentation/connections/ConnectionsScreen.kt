@@ -5,9 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,8 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.inteltrace_v3.domain.models.NetworkConnection
+import com.example.inteltrace_v3.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConnectionsScreen(
     viewModel: ConnectionsViewModel = hiltViewModel(),
@@ -29,64 +30,93 @@ fun ConnectionsScreen(
     val filterType by viewModel.filterType.collectAsState()
     var showFilterMenu by remember { mutableStateOf(false) }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Network Connections") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showFilterMenu = true }) {
-                        Icon(Icons.Default.Menu, "Filter")
-                    }
-                    
-                    DropdownMenu(
-                        expanded = showFilterMenu,
-                        onDismissRequest = { showFilterMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("All Connections") },
-                            onClick = {
-                                viewModel.setFilter(FilterType.ALL)
-                                showFilterMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Suspicious Only") },
-                            onClick = {
-                                viewModel.setFilter(FilterType.SUSPICIOUS)
-                                showFilterMenu = false
-                            }
-                        )
-                    }
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(SystemBackground)
+    ) {
+        // iOS-style Navigation Bar
+        GlassyHeader {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = SystemBlue
+                )
+            }
+            
+            Text(
+                text = "Network Connections",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = LabelPrimary
             )
+            
+            Box {
+                IconButton(onClick = { showFilterMenu = true }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Filter",
+                        tint = SystemBlue
+                    )
+                }
+                
+                DropdownMenu(
+                    expanded = showFilterMenu,
+                    onDismissRequest = { showFilterMenu = false },
+                    modifier = Modifier.background(CardBackground)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("All Connections", color = LabelPrimary) },
+                        onClick = {
+                            viewModel.setFilter(FilterType.ALL)
+                            showFilterMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Suspicious Only", color = LabelPrimary) },
+                        onClick = {
+                            viewModel.setFilter(FilterType.SUSPICIOUS)
+                            showFilterMenu = false
+                        }
+                    )
+                }
+            }
         }
-    ) { paddingValues ->
+
         if (connections.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(AppleSpacing.medium),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "No connections detected",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "No connections detected",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = LabelSecondary,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = if (filterType == FilterType.SUSPICIOUS) "No suspicious activity found" else "Try refreshing or changing filters",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LabelTertiary,
+                        modifier = Modifier.padding(top = AppleSpacing.small)
+                    )
+                }
             }
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = AppleSpacing.medium),
+                contentPadding = PaddingValues(top = AppleSpacing.medium, bottom = AppleSpacing.xlarge),
+                verticalArrangement = Arrangement.spacedBy(AppleSpacing.medium)
             ) {
+                item {
+                    SectionHeader(if (filterType == FilterType.SUSPICIOUS) "Suspicious Activity" else "Recent Activity")
+                }
+                
                 items(connections, key = { it.id }) { connection ->
                     ConnectionItem(connection)
                 }
@@ -97,67 +127,75 @@ fun ConnectionsScreen(
 
 @Composable
 fun ConnectionItem(connection: NetworkConnection) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    AppleCard {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Threat indicator
+            // Status Indicator (Dot)
             Box(
                 modifier = Modifier
-                    .size(12.dp)
+                    .size(10.dp)
                     .clip(CircleShape)
                     .background(getThreatColor(connection.threatScore))
             )
             
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(AppleSpacing.medium))
             
             Column(modifier = Modifier.weight(1f)) {
+                // App Name
                 Text(
-                    text = connection.appName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = "${connection.destIp}:${connection.destPort}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    text = connection.appName.ifEmpty { "Unknown App" },
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = LabelPrimary
                 )
                 
                 Spacer(modifier = Modifier.height(2.dp))
                 
+                // IP Address
                 Text(
-                    text = "${connection.protocolName} • ${connection.timestampFormatted}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "${connection.destIp}:${connection.destPort}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LabelPrimary // High intensity
                 )
                 
-                if (connection.country != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                
+                // Metadata
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "📍 ${connection.country}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = connection.protocolName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = LabelSecondary
                     )
+                    if (connection.country != null) {
+                        Text(
+                            text = " • ${connection.country}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = LabelSecondary
+                        )
+                    }
                 }
+                
+                Text(
+                    text = connection.timestampFormatted,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = LabelTertiary,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
             
+            // Threat Score Badge (only if significant)
             if (connection.threatScore > 0) {
+                Spacer(modifier = Modifier.width(AppleSpacing.small))
                 Surface(
-                    color = getThreatColor(connection.threatScore).copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small
+                    color = getThreatColor(connection.threatScore).copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(AppleRadius.small)
                 ) {
                     Text(
                         text = "${connection.threatScore}",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = getThreatColor(connection.threatScore)
                     )
                 }
@@ -168,10 +206,10 @@ fun ConnectionItem(connection: NetworkConnection) {
 
 fun getThreatColor(score: Int): Color {
     return when {
-        score >= 80 -> Color(0xFFF44336) // Red
-        score >= 60 -> Color(0xFFFF9800) // Orange
-        score >= 40 -> Color(0xFFFFC107) // Yellow
-        score >= 20 -> Color(0xFF8BC34A) // Light Green
-        else -> Color(0xFF4CAF50) // Green
+        score >= 80 -> SystemRed
+        score >= 60 -> SystemOrange
+        score >= 40 -> SystemYellow
+        score >= 20 -> SystemGreen
+        else -> SystemBlue // Neutral/Safe
     }
 }

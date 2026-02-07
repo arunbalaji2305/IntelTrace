@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.VpnService
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +52,19 @@ fun DashboardScreen(
     }
     
     // Apple Design Layout: Full screen background with content
+    
+    // Animated rotation for refresh icon
+    val infiniteTransition = rememberInfiniteTransition(label = "refresh")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,7 +79,12 @@ fun DashboardScreen(
             )
             Row {
                 IconButton(onClick = { viewModel.refresh() }) {
-                    Icon(Icons.Default.Refresh, "Refresh", tint = SystemBlue)
+                    Icon(
+                        Icons.Default.Refresh,
+                        "Refresh",
+                        tint = SystemBlue,
+                        modifier = if (uiState.isRefreshing) Modifier.rotate(rotation) else Modifier
+                    )
                 }
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(Icons.Default.Settings, "Settings", tint = SystemBlue)

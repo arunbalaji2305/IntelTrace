@@ -18,8 +18,12 @@ import javax.inject.Singleton
 class ThreatRepository @Inject constructor(
     private val abuseIPDBService: AbuseIPDBService,
     private val virusTotalService: VirusTotalService,
+    private val alienVaultService: com.example.inteltrace_v3.data.remote.api.AlienVaultOTXService,
+    private val threatFoxService: com.example.inteltrace_v3.data.remote.api.ThreatFoxService,
+    private val phishTankService: com.example.inteltrace_v3.data.remote.api.PhishTankService,
     private val threatDao: ThreatDao,
     private val threatCache: ThreatCache,
+    private val bloomFilter: com.example.inteltrace_v3.core.utils.BloomFilter,
     private val prefs: SecurityPreferences
 ) {
     
@@ -32,6 +36,11 @@ class ThreatRepository @Inject constructor(
                 threatScore = 0,
                 message = "Private IP address"
             )
+        }
+        
+        // Check Bloom filter for quick lookup
+        if (bloomFilter.mightContain(ipAddress)) {
+            Log.d(TAG, "Bloom filter match for $ipAddress - checking full sources")
         }
         
         // Check cache first
@@ -50,6 +59,11 @@ class ThreatRepository @Inject constructor(
         // Query OSINT sources
         return try {
             val threat = queryOSINTSources(ipAddress)
+            
+            if (threat.isMalicious) {
+                bloomFilter.add(ipAddress)
+            }
+            
             threatDao.insert(threat)
             threatCache.put(ipAddress, threat)
             threat.toThreatResult()
@@ -73,6 +87,9 @@ class ThreatRepository @Inject constructor(
         var usageType: String? = null
         var vtDetections = 0
         var vtEngines = 0
+        var otxPulseCount = 0
+        var threatFoxMatches = 0
+        val detectionSources = mutableListOf<String>()
         
         // Query AbuseIPDB
         try {
@@ -86,6 +103,7 @@ class ThreatRepository @Inject constructor(
                     isp = data.isp
                     domain = data.domain
                     usageType = data.usageType
+                    if (abuseScore > 0) detectionSources.add("AbuseIPDB")
                 }
             }
         } catch (e: Exception) {
@@ -100,6 +118,7 @@ class ThreatRepository @Inject constructor(
                 response.data.attributes.lastAnalysisStats?.let { stats ->
                     vtDetections = stats.malicious + stats.suspicious
                     vtEngines = stats.harmless + stats.malicious + stats.suspicious + stats.undetected
+                    if (vtDetections > 0) detectionSources.add("VirusTotal")
                 }
                 if (country == null) {
                     country = response.data.attributes.country
@@ -109,8 +128,50 @@ class ThreatRepository @Inject constructor(
             Log.e(TAG, "VirusTotal query failed: ${e.message}")
         }
         
-        // Calculate overall threat score
-        val threatScore = calculateThreatScore(abuseScore, vtDetections, vtEngines)
+        // Query AlienVault OTX
+        try {
+            val apiKey = prefs.alienVaultApiKey.ifEmpty { "" }
+            if (apiKey.isNotEmpty()) {
+                val response = alienVaultService.getIPReputation(ipAddress, apiKey)
+                if (response.isSuccessful) {
+                    response.body()?.let { otxData ->
+                        otxPulseCount = otxData.pulseInfo?.count ?: 0
+                        if (otxPulseCount > 0) {
+                            detectionSources.add("AlienVault OTX ($otxPulseCount pulses)")
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "AlienVault OTX query failed: ${e.message}")
+        }
+        
+        // Query ThreatFox
+        try {
+            val request = com.example.inteltrace_v3.data.remote.api.ThreatFoxService.createIPSearchRequest(ipAddress)
+            val response = threatFoxService.searchIOC(request)
+            if (response.isSuccessful) {
+                response.body()?.let { threatFoxData ->
+                    threatFoxMatches = threatFoxData.data?.size ?: 0
+                    if (threatFoxMatches > 0) {
+                        detectionSources.add("ThreatFox ($threatFoxMatches IOCs)")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "ThreatFox query failed: ${e.message}")
+        }
+        
+        // Calculate overall threat score with all sources
+        val threatScore = calculateThreatScore(
+            abuseScore = abuseScore,
+            vtDetections = vtDetections,
+            vtEngines = vtEngines,
+            otxPulseCount = otxPulseCount,
+            threatFoxMatches = threatFoxMatches
+        )
+        
+        Log.d(TAG, "IP $ipAddress threat score: $threatScore from ${detectionSources.size} sources: ${detectionSources.joinToString()}")
         
         return ThreatEntity(
             ipAddress = ipAddress,
@@ -131,17 +192,41 @@ class ThreatRepository @Inject constructor(
     private fun calculateThreatScore(
         abuseScore: Int,
         vtDetections: Int,
-        vtEngines: Int
+        vtEngines: Int,
+        otxPulseCount: Int = 0,
+        threatFoxMatches: Int = 0
     ): Int {
-        var score = abuseScore
+        val weights = mutableListOf<Pair<Int, Double>>()
         
-        // Add VirusTotal weight
+        // AbuseIPDB (weight: 0.4)
+        weights.add(Pair(abuseScore, 0.4))
+        
+        // VirusTotal (weight: 0.3)
         if (vtEngines > 0) {
             val vtPercentage = (vtDetections.toFloat() / vtEngines * 100).toInt()
-            score = (score + vtPercentage) / 2
+            weights.add(Pair(vtPercentage, 0.3))
         }
         
-        return score.coerceIn(0, 100)
+        // AlienVault OTX (weight: 0.15)
+        if (otxPulseCount > 0) {
+            val otxScore = (otxPulseCount * 20).coerceAtMost(100)
+            weights.add(Pair(otxScore, 0.15))
+        }
+        
+        // ThreatFox (weight: 0.15)
+        if (threatFoxMatches > 0) {
+            val tfScore = (threatFoxMatches * 25).coerceAtMost(100)
+            weights.add(Pair(tfScore, 0.15))
+        }
+        
+        val totalWeight = weights.sumOf { it.second }
+        val weightedScore = if (totalWeight > 0) {
+            weights.sumOf { (score, weight) -> score * weight } / totalWeight
+        } else {
+            0.0
+        }
+        
+        return weightedScore.toInt().coerceIn(0, 100)
     }
     
     private fun isPrivateIP(ip: String): Boolean {

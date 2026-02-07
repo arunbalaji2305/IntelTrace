@@ -238,7 +238,7 @@ fun StatRow(label: String, value: String) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = LabelSecondary
+            color = LabelPrimary
         )
         Text(
             text = value,

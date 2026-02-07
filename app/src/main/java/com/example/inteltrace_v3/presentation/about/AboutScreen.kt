@@ -23,34 +23,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.inteltrace_v3.BuildConfig
-import com.example.inteltrace_v3.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen() {
     val context = LocalContext.current
     var showPrivacyDialog by remember { mutableStateOf(false) }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(SystemBackground)
-    ) {
-        // Apple-style Header
-        GlassyHeader {
-            Text(
-                text = "About",
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                color = LabelPrimary
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("About") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         }
-
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = AppleSpacing.medium),
-            contentPadding = PaddingValues(top = AppleSpacing.large, bottom = AppleSpacing.xlarge),
+                .padding(paddingValues)
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(AppleSpacing.large)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // App Logo and Info
             item {
@@ -63,52 +60,55 @@ fun AboutScreen() {
                         modifier = Modifier
                             .size(100.dp)
                             .clip(CircleShape)
-                            .background(SystemBlue.copy(alpha = 0.15f)),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
                             modifier = Modifier.size(50.dp),
-                            tint = SystemBlue
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                     
                     Text(
                         text = "IntelTrace",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = LabelPrimary
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
                     )
                     
                     Text(
                         text = "Network Security Monitor",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = LabelSecondary
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                     
                     Text(
                         text = "Version ${BuildConfig.VERSION_NAME}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = LabelTertiary
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                 }
             }
             
             // Description
             item {
-                AppleCard {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(AppleSpacing.small)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = "About IntelTrace",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = LabelPrimary
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "IntelTrace is a powerful network security monitoring application that helps protect your Android device by analyzing network traffic, detecting suspicious connections, and identifying potential threats using OSINT (Open Source Intelligence).",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = LabelSecondary
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                     }
                 }
@@ -116,14 +116,17 @@ fun AboutScreen() {
             
             // Features
             item {
-                AppleCard {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(AppleSpacing.medium)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
                             text = "Key Features",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = LabelPrimary
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                         
                         FeatureItem(
@@ -233,18 +236,17 @@ fun AboutScreen() {
 fun FeatureItem(icon: ImageVector, text: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppleSpacing.small)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = SystemBlue,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(20.dp)
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = LabelPrimary
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }
@@ -256,47 +258,44 @@ fun InfoCard(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    AppleCard(onClick = onClick) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(AppleSpacing.medium),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(SystemBlue.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = SystemBlue,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
                 Column {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                        color = LabelPrimary
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = description,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = LabelSecondary
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = SystemGray3
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
         }
     }

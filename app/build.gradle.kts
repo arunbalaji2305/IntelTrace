@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,11 +9,21 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// Load API keys from local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(FileInputStream(localPropertiesFile))
+    }
+}
+
+// Get API keys with fallback to placeholder
+val abuseipdbApiKey = localProperties.getProperty("ABUSEIPDB_API_KEY", "YOUR_ABUSEIPDB_KEY")
+val virustotalApiKey = localProperties.getProperty("VIRUSTOTAL_API_KEY", "YOUR_VIRUSTOTAL_KEY")
+
 android {
     namespace = "com.example.inteltrace_v3"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.inteltrace_v3"
@@ -21,9 +34,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        // Build config fields for API keys
-        buildConfigField("String", "ABUSEIPDB_API_KEY", "\"YOUR_ABUSEIPDB_KEY\"")
-        buildConfigField("String", "VIRUSTOTAL_API_KEY", "\"YOUR_VIRUSTOTAL_KEY\"")
+        // Build config fields for API keys - now reading from local.properties
+        buildConfigField("String", "ABUSEIPDB_API_KEY", "\"$abuseipdbApiKey\"")
+        buildConfigField("String", "VIRUSTOTAL_API_KEY", "\"$virustotalApiKey\"")
     }
 
     buildTypes {

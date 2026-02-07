@@ -46,6 +46,10 @@ class AlertRepository @Inject constructor(
         return alertDao.getUnreadCount()
     }
     
+    fun getAlertsByType(type: String): Flow<List<AlertEntity>> {
+        return alertDao.getAlertsByType(type)
+    }
+    
     suspend fun markAsRead(id: Long) {
         alertDao.markAsRead(id)
     }

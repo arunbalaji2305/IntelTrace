@@ -1,5 +1,6 @@
 package com.example.inteltrace_v3.presentation.connections
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.inteltrace_v3.data.repository.ConnectionRepository
@@ -12,10 +13,16 @@ import javax.inject.Inject
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ConnectionsViewModel @Inject constructor(
-    private val connectionRepository: ConnectionRepository
+    private val connectionRepository: ConnectionRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     
-    private val _filterType = MutableStateFlow(FilterType.ALL)
+    private val initialFilter = when (savedStateHandle.get<String>("filter")) {
+        "suspicious" -> FilterType.SUSPICIOUS
+        else -> FilterType.ALL
+    }
+    
+    private val _filterType = MutableStateFlow(initialFilter)
     val filterType: StateFlow<FilterType> = _filterType.asStateFlow()
     
     val connections: StateFlow<List<NetworkConnection>> = _filterType.flatMapLatest { filter ->

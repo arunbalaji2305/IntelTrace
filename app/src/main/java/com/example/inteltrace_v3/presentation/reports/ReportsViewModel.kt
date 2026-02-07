@@ -28,7 +28,8 @@ data class ReportStatistics(
 @HiltViewModel
 class ReportsViewModel @Inject constructor(
     private val connectionRepository: ConnectionRepository,
-    private val alertRepository: AlertRepository
+    private val alertRepository: AlertRepository,
+    private val exportManager: com.example.inteltrace_v3.core.export.ExportManager
 ) : ViewModel() {
     
     val statistics: StateFlow<ReportStatistics> = combine(

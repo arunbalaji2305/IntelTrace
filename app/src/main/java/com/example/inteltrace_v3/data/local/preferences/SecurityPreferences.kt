@@ -56,6 +56,10 @@ class SecurityPreferences @Inject constructor(
         get() = prefs.getString(KEY_VIRUSTOTAL_API, "") ?: ""
         set(value) = prefs.edit().putString(KEY_VIRUSTOTAL_API, value).apply()
     
+    var alienVaultApiKey: String
+        get() = prefs.getString(KEY_ALIENVAULT_API, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_ALIENVAULT_API, value).apply()
+    
     companion object {
         private const val KEY_VPN_ENABLED = "vpn_enabled"
         private const val KEY_REAL_TIME_MONITORING = "real_time_monitoring"
@@ -67,5 +71,6 @@ class SecurityPreferences @Inject constructor(
         private const val KEY_FIRST_LAUNCH = "first_launch"
         private const val KEY_ABUSEIPDB_API = "abuseipdb_api_key"
         private const val KEY_VIRUSTOTAL_API = "virustotal_api_key"
+        private const val KEY_ALIENVAULT_API = "alienvault_api_key"
     }
 }

@@ -40,6 +40,12 @@ interface ConnectionDao {
     @Query("DELETE FROM connections")
     suspend fun deleteAll()
     
+    @Query("UPDATE connections SET threatScore = :score WHERE id = :id")
+    suspend fun updateThreatScore(id: Long, score: Int)
+    
+    @Query("UPDATE connections SET bytesSent = :bytesSent, bytesReceived = :bytesReceived WHERE id = :id")
+    suspend fun updateBytes(id: Long, bytesSent: Long, bytesReceived: Long)
+    
     @Query("""
         SELECT packageName, appName, COUNT(*) as count, SUM(bytesSent) as totalSent, SUM(bytesReceived) as totalReceived
         FROM connections 
